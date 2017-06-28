@@ -56,6 +56,7 @@ public class MainActivity extends TaskActivity {
         listenLocation();
     }
 
+
     private void listenLocation() {
         if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) && !hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
             String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
@@ -63,27 +64,7 @@ public class MainActivity extends TaskActivity {
             return;
         }
 
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(getString(R.string.tip_open_gps));
-            builder.setPositiveButton(R.string.ok,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            // 转到手机设置界面，用户设置GPS
-                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                            startActivityForResult(intent, REQUEST_CODE_GPS_SETTING);
-                        }
-                    });
-            builder.setNeutralButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int arg1) {
-                    dialog.dismiss();
-                }
-            });
-            builder.show();
-        }
+        isGpsOpened();
 
         mLocationClient = new AMapLocationClient(this);
         //设置定位监听
@@ -123,6 +104,27 @@ public class MainActivity extends TaskActivity {
         mLocationClient.startLocation();
     }
 
+    private boolean isGpsOpened() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage(getString(R.string.tip_open_gps));
+            builder.setCancelable(false);
+            builder.setPositiveButton(R.string.ok,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface arg0, int arg1) {
+                            // 转到手机设置界面，用户设置GPS
+                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            startActivityForResult(intent, REQUEST_CODE_GPS_SETTING);
+                        }
+                    });
+            builder.show();
+            return false;
+        }
+        return true;
+    }
+
     public void onClickNew(View view) {
         if (!hasPermission(Manifest.permission.CAMERA)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_PERMISSION_CAMERA);
@@ -153,7 +155,9 @@ public class MainActivity extends TaskActivity {
 
     private void unlockBike() {
         if (mLocation == null) {
-            Toast.makeText(this, R.string.tip_locating, Toast.LENGTH_LONG).show();
+            if (isGpsOpened()) {
+                Toast.makeText(this, R.string.tip_locating, Toast.LENGTH_LONG).show();
+            }
             return;
         }
 
