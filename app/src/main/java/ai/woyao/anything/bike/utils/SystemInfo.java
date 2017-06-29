@@ -14,10 +14,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.lang.reflect.Field;
 import java.util.Locale;
 
-import ai.woyao.anything.bike.net.encode.SDKPswCoder;
+import ai.woyao.anything.bike.net.encrypt.SDKPswCoder;
 
 /**
  * 设备参数信息
@@ -35,33 +34,16 @@ public class SystemInfo {
      */
     private static String sMac;
 
-    // ////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Android ID
      */
     private static String sAndroidId;
 
-    // ///////////////////////////////////////////////////
-    /**
-     * 本地语言类型
-     */
-    private static String sLocaleLanguage;
-    /**
-     * 厂商
-     */
-    private static String sManufacturer;
     /**
      * 运营商名称 carrierName
      */
     private static String sOperatorName;
-    /**
-     * 手机类型 , 2012-11-15
-     */
-    private static int sPhoneType = -1;
-    /**
-     * 手机网络类型，用于判断2、2.5、2.75、3或4G等环境 ,2012-11-15
-     */
-    private static int sNetworkType = -1;
+
     /**
      * imei
      */
@@ -70,25 +52,6 @@ public class SystemInfo {
      * imsi
      */
     private static String sImsi;
-
-    /**
-     * 获取本地语言 11-5-23
-     *
-     * @return
-     */
-    public static String getLocaleLanguage_Country() {
-        try {
-            if (sLocaleLanguage == null) {
-                Locale l = Locale.getDefault();
-                sLocaleLanguage = String.format("%s-%s", l.getLanguage(),
-                        l.getCountry());
-            }
-        } catch (Throwable e) {
-            // TODO: handle exception
-        }
-
-        return sLocaleLanguage;
-    }
 
     /**
      * 初始化AndroidID
@@ -107,10 +70,7 @@ public class SystemInfo {
                 andId = andId.toLowerCase();
                 return andId;
             }
-
-        } catch (Throwable e) {
-            // handle Throwable
-
+        } catch (Throwable ignored) {
         }
         return "";
     }
@@ -130,9 +90,7 @@ public class SystemInfo {
             if (sAndroidId != null) {
                 return sAndroidId;
             }
-
-        } catch (Throwable e) {
-            // handle Throwable
+        } catch (Throwable ignored) {
         }
         return "";
     }
@@ -150,52 +108,38 @@ public class SystemInfo {
                     .getSystemService(Context.TELEPHONY_SERVICE);
 
             if (telephonyManager != null) {
-                try {
-                    // IMEI
-                    String imeiStr = telephonyManager.getDeviceId();
-                    if (imeiStr != null) {
-                        imei = imeiStr;
+                // IMEI
+                imei = telephonyManager.getDeviceId();
+                if (imei != null) {
+                    imei = imei.trim();
 
-                        if (imei != null) {
-                            imei = imei.trim();
-
-                            if (imei.indexOf(" ") > -1) {
-                                imei.replace(" ", "");
-                            }
-
-                            if (imei.indexOf("-") > -1) {
-                                imei = imei.replace("-", "");
-                            }
-
-                            if (imei.indexOf("\n") > -1) {
-                                imei = imei.replace("\n", "");
-                            }
-                            String meidStr = "MEID:";
-                            int stratIndex = imei.indexOf(meidStr);
-                            if (stratIndex > -1) {
-                                imei = imei.substring(stratIndex
-                                        + meidStr.length());
-                            }
-
-                            imei = imei.trim();
-                            imei = imei.toLowerCase();
-
-                            if (imei.length() < 10) {
-                                imei = null;
-                            }
-                        }
-
+                    if (imei.contains(" ")) {
+                        imei = imei.replace(" ", "");
                     }
 
-                } catch (Throwable e) {
-                    // handle Throwable
+                    if (imei.contains("-")) {
+                        imei = imei.replace("-", "");
+                    }
 
+                    if (imei.contains("\n")) {
+                        imei = imei.replace("\n", "");
+                    }
+
+                    String meid = "MEID:";
+                    int meidIndex = imei.indexOf(meid);
+                    if (meidIndex > -1) {
+                        imei = imei.substring(meidIndex + meid.length());
+                    }
+
+                    imei = imei.trim();
+                    imei = imei.toLowerCase();
+
+                    if (imei.length() < 10) {
+                        imei = null;
+                    }
                 }
-
             }
-        } catch (Throwable e) {
-            // handle Throwable
-
+        } catch (Throwable ignored) {
         }
 
         return imei;
@@ -216,9 +160,7 @@ public class SystemInfo {
             if (sImei != null) {
                 return sImei;
             }
-
-        } catch (Throwable e) {
-            // handle Throwable
+        } catch (Throwable ignored) {
         }
         return "";
     }
@@ -236,26 +178,18 @@ public class SystemInfo {
                     .getSystemService(Context.TELEPHONY_SERVICE);
 
             if (telephonyManager != null) {
-                try {
-                    // IMSI
-                    String imsiStr = telephonyManager.getSubscriberId();
-                    if (imsiStr != null) {
-                        imsi = imsiStr.trim();
+                // IMSI
+                imsi = telephonyManager.getSubscriberId();
+                if (imsi != null) {
+                    imsi = imsi.trim();
+                    if (imsi.length() < 10) {
+                        imsi = null;
+                    } else {
                         imsi = imsi.toLowerCase();
-                        if (imsi.length() < 10) {
-                            imsi = null;
-                        }
                     }
-
-                } catch (Throwable e) {
-                    // handle Throwable
-
                 }
-
             }
-        } catch (Throwable e) {
-            // handle Throwable
-
+        } catch (Throwable ignored) {
         }
 
         return imsi;
@@ -294,24 +228,19 @@ public class SystemInfo {
             if (hasPermission(context, Manifest.permission.ACCESS_WIFI_STATE)) {
                 WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 WifiInfo info = wifi.getConnectionInfo();
-                String str = info.getMacAddress();
+                String mac = info.getMacAddress();
 
-                if (str != null) {
-                    str = str.trim();
-
-                    str = str.replace(":", "");// 去掉:号
-
-                    str = str.toLowerCase(Locale.ENGLISH);
-
-                    if (str.length() > 0) {
-                        saveMacToCacheFile(context, str);
+                if (mac != null) {
+                    mac = mac.trim();
+                    if (mac.length() > 0) {
+                        mac = mac.replace(":", "");// 去掉:号
+                        mac = mac.toLowerCase(Locale.ENGLISH);
+                        saveMacToCacheFile(context, mac);
                     }
-
-                    return str;
+                    return mac;
                 }
             }
-        } catch (Throwable e) {
-            // handle Throwable
+        } catch (Throwable ignored) {
         }
         return "";
     }
@@ -327,47 +256,30 @@ public class SystemInfo {
         BufferedReader br = null;
         try {
             File file = context.getFileStreamPath(sMacCacheFileName);
-            if (file == null) {
+            if (file == null || !file.exists()) {
                 return "";
             }
-
-            if (!file.exists()) {
-                return "";
-            }
-
             fr = new FileReader(file);
-
             br = new BufferedReader(fr);
-
             String macToDecode = br.readLine();
-
             if (macToDecode == null) {
                 return "";
             }
 
-            String mac = SDKPswCoder.decode(macToDecode, sMacPSW);
-
-            return mac;
-
-        } catch (Throwable e) {
-            // TODO: handle throwable
-
+            return SDKPswCoder.decode(macToDecode, sMacPSW);
+        } catch (Throwable ignored) {
         } finally {
             try {
                 if (br != null) {
                     br.close();
                 }
-            } catch (Throwable e2) {
-                // TODO: handle throwable
-
+            } catch (Throwable ignored) {
             }
             try {
                 if (fr != null) {
                     fr.close();
                 }
-            } catch (Throwable e2) {
-                // TODO: handle throwable
-
+            } catch (Throwable ignored) {
             }
         }
         return "";
@@ -391,34 +303,24 @@ public class SystemInfo {
             }
 
             String encodedMac = SDKPswCoder.encode(mac, sMacPSW);
-
             File file = context.getFileStreamPath(sMacCacheFileName);
             fw = new FileWriter(file);
             bw = new BufferedWriter(fw);
             bw.write(encodedMac);
             bw.flush();
-
-        } catch (Throwable e) {
-            // TODO: handle throwable
-
+        } catch (Throwable ignored) {
         } finally {
             try {
                 if (fw != null) {
                     fw.close();
                 }
-
-            } catch (Throwable e2) {
-                // TODO: handle throwable
-
+            } catch (Throwable ignored) {
             }
             try {
                 if (bw != null) {
                     bw.close();
                 }
-
-            } catch (Throwable e2) {
-                // TODO: handle throwable
-
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -433,48 +335,19 @@ public class SystemInfo {
         try {
             if (sMac == null || sMac.length() <= 0) {
                 sMac = initMac(context);
-
             }
 
             if (sMac == null || sMac.length() <= 0) {
                 //如果拿到的mac为空，才从缓存文件中拿
                 sMac = initMacFromCacheFile(context);
-
             }
 
             if (sMac != null) {
                 return sMac;
             }
-
-        } catch (Throwable e) {
-            // handle Throwable
+        } catch (Throwable ignored) {
         }
         return "";
-    }
-
-    /**
-     * 获取品牌 DeviceVendor 如HTC
-     */
-    public static String getManufacturerInfo() {
-        // Auto-generated method stub
-
-        try {
-            if (sManufacturer == null) {
-                Field f = Build.class.getField("MANUFACTURER");
-                if (f != null) {
-                    sManufacturer = f.get(Build.class).toString().trim();
-
-                }
-            }
-        } catch (Throwable e) {
-            // handle Throwable
-        }
-
-        if (sManufacturer == null) {
-            return Build.BRAND;
-        }
-
-        return sManufacturer;
     }
 
     /**
@@ -506,26 +379,15 @@ public class SystemInfo {
                     .getSystemService(Context.TELEPHONY_SERVICE);
 
             if (telephonyManager != null) {
-                try {
-                    /*
-                     * 运营商的名称 cn
-					 */
-                    String str = telephonyManager.getNetworkOperatorName();
-
-                    if (str == null) {
-                        sOperatorName = "";
-
-                    } else {
-                        sOperatorName = str;
-                    }
-
-                } catch (Throwable e) {
-                    // handle Throwable
+                // 运营商的名称 cn
+                String str = telephonyManager.getNetworkOperatorName();
+                if (str == null) {
+                    sOperatorName = "";
+                } else {
+                    sOperatorName = str;
                 }
-
             }
-        } catch (Throwable e) {
-            // handle Throwable
+        } catch (Throwable ignored) {
         }
     }
 
@@ -548,26 +410,6 @@ public class SystemInfo {
     }
 
     /**
-     * 获取手机类型 2012-11-15
-     *
-     * @param context
-     * @return
-     */
-    public static int getPhoneType(Context context) {
-        try {
-            TelephonyManager telephonyManager = (TelephonyManager) context
-                    .getSystemService(Context.TELEPHONY_SERVICE);
-
-            if (telephonyManager != null) {
-                return telephonyManager.getPhoneType();
-            }
-        } catch (Throwable e) {
-            // TODO: handle exception
-        }
-        return TelephonyManager.PHONE_TYPE_NONE;
-    }
-
-    /**
      * 获取手机网络类型 2012-11-15
      *
      * @param context
@@ -581,8 +423,7 @@ public class SystemInfo {
             if (telephonyManager != null) {
                 return telephonyManager.getNetworkType();
             }
-        } catch (Throwable e) {
-            // TODO: handle exception
+        } catch (Throwable ignored) {
         }
         return TelephonyManager.NETWORK_TYPE_UNKNOWN;
     }

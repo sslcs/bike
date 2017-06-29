@@ -24,7 +24,6 @@ public class RetrofitSender {
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             //设置 Debug Log 模式
-            builder.addInterceptor(new ResponseInterceptor());
             builder.addInterceptor(loggingInterceptor);
         }
 

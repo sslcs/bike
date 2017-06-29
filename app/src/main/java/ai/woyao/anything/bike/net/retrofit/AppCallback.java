@@ -1,8 +1,12 @@
 package ai.woyao.anything.bike.net.retrofit;
 
+import android.text.TextUtils;
+import android.util.Base64;
+
+import ai.woyao.anything.bike.net.bean.response.ServerResponse;
 import rx.Subscriber;
 
-public abstract class AppCallback<T> extends Subscriber<T> {
+public abstract class AppCallback extends Subscriber<ServerResponse> {
     @Override
     public final void onError(Throwable e) {
         preprocessor();
@@ -10,9 +14,19 @@ public abstract class AppCallback<T> extends Subscriber<T> {
     }
 
     @Override
-    public final void onNext(T t) {
-        preprocessor();
-        onSuccess(t);
+    public final void onNext(ServerResponse response) {
+        if (response == null || TextUtils.isEmpty(response.data)) {
+            onError(new Throwable("response null!!!"));
+        } else if (!response.isSuccess()) {
+            onError(new Throwable(response.error));
+        } else {
+            String encoded = response.data;
+            byte[] decode = Base64.decode(encoded, Base64.DEFAULT);
+            String data = new String(decode);
+
+            preprocessor();
+            onSuccess(data);
+        }
     }
 
     @Override
@@ -20,7 +34,7 @@ public abstract class AppCallback<T> extends Subscriber<T> {
 
     public abstract void preprocessor();
 
-    public abstract void onSuccess(T response);
+    public abstract void onSuccess(String response);
 
     public abstract void onFail(Throwable e);
 }

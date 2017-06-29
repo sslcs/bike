@@ -5,7 +5,5 @@ package ai.woyao.anything.bike.constants;
  * 存放action
  */
 public class Action {
-    public static final String ACTION_CONFIG_UPDATE = "config_update";
-
     public static final String ACTION_UNLOCK_BIKE = "bike_unlock_bike";
 }

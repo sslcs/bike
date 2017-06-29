@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.view.View;
 import android.widget.Toast;
 
@@ -34,9 +33,8 @@ import ai.woyao.anything.bike.net.NetParams;
 import ai.woyao.anything.bike.net.bean.params.ParamsQr;
 import ai.woyao.anything.bike.net.bean.response.DataPassword;
 import ai.woyao.anything.bike.net.bean.response.DataResponse;
-import ai.woyao.anything.bike.net.bean.response.ServerResponse;
+import ai.woyao.anything.bike.net.encrypt.ResponseDecoder;
 import ai.woyao.anything.bike.utils.DebugLog;
-import ai.woyao.anything.bike.utils.GsonSingleton;
 
 public class MainActivity extends TaskActivity {
     private final int REQUEST_CODE_PERMISSION_LOCATION = 100;
@@ -176,26 +174,18 @@ public class MainActivity extends TaskActivity {
             throwable.printStackTrace();
         }
 
-        NetCallback<ServerResponse> callback = new NetCallback<ServerResponse>() {
+        NetCallback callback = new NetCallback() {
             @Override
-            public void onSuccess(ServerResponse response) {
+            public void onSuccess(String response) {
                 DebugLog.e("onSuccess");
                 bikeId = null;
-                String encoded = response.data;
-                byte[] decode = Base64.decode(encoded, Base64.DEFAULT);
-                String data = new String(decode);
-                int index = data.indexOf("{");
-                if (index != -1) {
-                    data = data.substring(index);
-                    DebugLog.e("response : " + data);
-                }
 
                 Type type = new TypeToken<DataResponse<DataPassword>>() {}.getType();
-                DataResponse<DataPassword> dataResponse = GsonSingleton.get().fromJson(data, type);
-                if (dataResponse.isSuccess()) {
+                DataResponse<DataPassword> dataResponse = ResponseDecoder.getData(response, type);
+                if (dataResponse != null && dataResponse.isSuccess()) {
                     showPassword(dataResponse.data.password);
                 } else {
-                    onFail(new Throwable(dataResponse.error));
+                    onFail(ResponseDecoder.error(dataResponse));
                 }
             }
 

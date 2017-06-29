@@ -1,4 +1,4 @@
-package ai.woyao.anything.bike.net.encode;
+package ai.woyao.anything.bike.net.encrypt;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;

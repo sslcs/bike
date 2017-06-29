@@ -2,13 +2,13 @@ package ai.woyao.anything.bike.net;
 
 import ai.woyao.anything.bike.net.retrofit.AppCallback;
 
-public abstract class NetCallback<T> extends AppCallback<T> {
+public abstract class NetCallback extends AppCallback {
     /**
      * 请求成功时回调接口
      *
      * @param response 返回结果
      */
-    public abstract void onSuccess(T response);
+    public abstract void onSuccess(String response);
 
     /**
      * 请求失败时回调接口
